@@ -95,7 +95,7 @@ class InceptionB(nn.Module):
     def __init__(self, input_channels=1024):
         super(InceptionB, self).__init__()
 
-        self.conv1 = nn.Conv2d(input_channels, 192, kernel_size=1, padding=1)
+        self.conv1 = nn.Conv2d(input_channels, 192, kernel_size=1)
         self.conv2 = nn.Conv2d(192, 224, kernel_size=(1, 7), padding=(0, 3))
         self.conv3 =  nn.Conv2d(224, 256, kernel_size=(1, 7), padding=(0, 3))
         
@@ -128,7 +128,7 @@ class InceptionB(nn.Module):
         batch4 = self.conv6(batch4)
         batch4 = self.conv7(batch4)
         return torch.cat((batch1, batch2, batch3, batch4), dim = 1)
-
+#InceptionB done
 
 class InceptionC(nn.Module):
     def __init__(self, input_channels=1536):
@@ -176,24 +176,18 @@ class ReductionA(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1)
         self.conv1 = nn.Conv2d(input_channels, 384, kernel_size=3)
         self.conv2 = nn.Conv2d(input_channels, 192, kernel_size=1)
-        self.conv3 = nn.Conv2d(192, 192, kernel_size=3)
+        self.conv3 = nn.Conv2d(192, 192, kernel_size=3, padding=1)
         self.conv4 = nn.Conv2d(192, 256, kernel_size=3)
 
     def forward(self, x):
         batch1 = self.maxpool(x)
-        # batch1 = torch.nn.functional.pad(batch1, (1, 1, 1, 1, 0, 0), mode='constant', value=0)
-
         batch2 = self.conv1(x)
-
         batch3 = self.conv2(x)
         batch3 = self.conv3(batch3)
         batch3 = self.conv4(batch3)
-        print("batch1 size = ",batch1.size())
-        print("batch2 size = ",batch2.size())
-        print("batch3 size = ",batch3.size())
-        # print("batch4 size = ",batch4.size())
-        return torch.cat((batch1, batch2, batch3), dim =1)
-        # return torch.cat((batch1, batch2), dim =1)
+        tmp = torch.cat((batch1, batch3), dim =1)
+        return torch.cat((batch2,tmp), dim =1)
+#ReductionA done
 
 
 class ReductionB(nn.Module):
