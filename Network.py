@@ -131,7 +131,7 @@ class InceptionC(nn.Module):
     def __init__(self, input_channels=1536):
         super(InceptionC, self).__init__()
 
-        self.conv1 = nn.Conv2d(input_channels, 384, kernel_size=1, padding=1)
+        self.conv1 = nn.Conv2d(input_channels, 384, kernel_size=1)
         self.conv2 = nn.Conv2d(384, 256, kernel_size=(1, 3), padding=(0, 1))
         self.conv3 =  nn.Conv2d(384, 256, kernel_size=(3, 1), padding=(1, 0))
         
@@ -208,10 +208,7 @@ class ReductionB(nn.Module):
         batch3 = self.conv4(batch3)
         batch3 = self.conv5(batch3)
         batch3 = self.conv6(batch3)
-        # print("batch1 size = ",batch1.size())
-        # print("batch2 size = ",batch2.size())
-        # print("batch3 size = ",batch3.size())
-        # print("batch4 size = ",batch4.size())
+
         return torch.cat((batch1, batch2, batch3), 1)
 #ReductionB done
 
