@@ -5,6 +5,8 @@ import torchvision
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+import numpy as np
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -34,62 +36,64 @@ class Stem(nn.Module):  # stem 层
         self.maxpool2 = nn.MaxPool2d(kernel_size=3, stride=2)      # (71x71x192) -> (35x35x192)
         
     def forward(self, x):
-        # First set of layers
         x = self.conv1(x)
         x = self.conv2(x)
-        x = self.conv3(x)
-        
-        # Second set of layers
-        x1 = self.maxpool1(x)
-        x2 = self.conv4(x)
-        x = torch.cat((x1, x2), dim=1)
-        
-        # Third set of layers
-        x1 = self.conv5(x)
-        x1 = self.conv6(x1)
-        x2 = self.conv7(x)
-        x2 = self.conv8(x2)
-        x2 = self.conv9(x2)
-        x2 = self.conv10(x2)
-        x = torch.cat((x1, x2), dim=1)
-        
-        # Fourth set of layers
-        x1 = self.maxpool2(x)
-        x2 = self.conv11(x)
-        x = torch.cat((x1, x2), dim=1)
-        
-        return x
-
-
+        x = self.conv3(x)  
+        # # Second set of layers
+        batch1 = self.maxpool1(x)
+        batch2 = self.conv4(x)
+        x1 = torch.cat((batch1, batch2), dim=1)
+        batch3 = self.conv5(x1)
+        batch3 = self.conv6(batch3)
+        batch4 = self.conv7(x1)
+        batch4 = self.conv8(batch4)
+        batch4 = self.conv9(batch4)
+        batch4 = self.conv10(batch4)
+        x2 = torch.cat((batch3, batch4), dim=1)
+        batch5 = self.conv11(x2)
+        batch6 = self.maxpool2(x2)
+        output = torch.cat((batch5,batch6),dim =1)
+        return output
 
 class InceptionA(nn.Module):
     def __init__(self, input_channels=384):
         super(InceptionA, self).__init__()
-        self.one_by_one_1 = nn.Conv2d(input_channels, 64, kernel_size=1)
-        self.three_by_three_1 = nn.Conv2d(64, 96, kernel_size=3, padding=1)
-        self.one_by_one_2 = nn.Conv2d(input_channels, 96, kernel_size=1)
-        self.three_by_three_2 = nn.Conv2d(96, 96, kernel_size=3, padding=1)
-        self.one_by_one_3 = nn.Conv2d(input_channels, 64, kernel_size=1)
+
+        self.conv1 = nn.Conv2d(input_channels, 64, kernel_size=1)
+        self.conv2 = nn.Conv2d(64, 96, kernel_size=3, padding=1)
+        self.conv3 =  nn.Conv2d(96, 96, kernel_size=3, padding=1)
+        self.conv3_1x1_proj = nn.Conv2d(input_channels, 96, kernel_size=1)
+    
+        # average pooling
         self.avg_pooling = nn.AvgPool2d(kernel_size=3, stride=1, padding=1)
-        self.one_by_one_4 = nn.Conv2d(input_channels, 96, kernel_size=1)
+        self.conv_1x1_proj = nn.Conv2d(input_channels, 96, kernel_size=1)
+        
 
     def forward(self, x):
-        batch1 = self.one_by_one_1(x)
-        batch1 = self.three_by_three_1(batch1)
-        batch2 = self.one_by_one_2(batch2)
-        batch2 = self.three_by_three_2(batch2)
-        batch2 = self.three_by_three_2(batch2)
-        batch3 = self.one_by_one_3(x)
-        batch4 = self.avg_pooling(x)
-        batch4 = self.one_by_one_4(batch4)
-        # 合并所有分支
-        return torch.cat((batch1, batch2, batch3, batch4), dim = 1)
+        #batch1
+        batch1 = self.avg_pooling(x)
+        batch1 = self.conv_1x1_proj(batch1)
+        #batch2
+        batch2 = self.conv3_1x1_proj(x)
+        #batch3
+        batch3 = self.conv1(x)
+        batch3 = self.conv2(batch3)
 
+        #batch4
+        batch4 = self.conv1(x) 
+        batch4 = self.conv2(batch4)
+        batch4 = self.conv3(batch4)
+        # print("batch1 size = ",batch1.size())
+        # print("batch2 size = ",batch2.size())
+        # print("batch3 size = ",batch3.size())
+        # print("batch4 size = ",batch4.size())
+        return torch.cat((batch1, batch2, batch3, batch4), dim = 1)
+#finish inception A
 
 
 class InceptionB(nn.Module):
     def __init__(self, input_channels=1024):
-        super(InceptionA, self).__init__()
+        super(InceptionB, self).__init__()
 
         self.conv1 = nn.Conv2d(input_channels, 192, kernel_size=1, padding=1)
         self.conv2 = nn.Conv2d(192, 224, kernel_size=(1, 7), padding=(0, 3))
@@ -128,7 +132,7 @@ class InceptionB(nn.Module):
 
 class InceptionC(nn.Module):
     def __init__(self, input_channels=1536):
-        super(InceptionA, self).__init__()
+        super(InceptionC, self).__init__()
 
         self.conv1 = nn.Conv2d(input_channels, 384, kernel_size=1, padding=1)
         self.conv2 = nn.Conv2d(384, 256, kernel_size=(1, 3), padding=(0, 1))
@@ -169,19 +173,27 @@ class InceptionC(nn.Module):
 class ReductionA(nn.Module):
     def __init__(self, input_channels=384):
         super(ReductionA, self).__init__()
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
-        self.conv1 = nn.Conv2d(input_channels, 384, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(input_channels, 192, kernel_size=1, padding=1)
-        self.conv3 = nn.Conv2d(192, 192, kernel_size=3, padding=1)
-        self.conv4 = nn.Conv2d(192, 256, kernel_size=3, padding=1)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1)
+        self.conv1 = nn.Conv2d(input_channels, 384, kernel_size=3)
+        self.conv2 = nn.Conv2d(input_channels, 192, kernel_size=1)
+        self.conv3 = nn.Conv2d(192, 192, kernel_size=3)
+        self.conv4 = nn.Conv2d(192, 256, kernel_size=3)
 
     def forward(self, x):
         batch1 = self.maxpool(x)
+        # batch1 = torch.nn.functional.pad(batch1, (1, 1, 1, 1, 0, 0), mode='constant', value=0)
+
         batch2 = self.conv1(x)
+
         batch3 = self.conv2(x)
         batch3 = self.conv3(batch3)
         batch3 = self.conv4(batch3)
-        return torch.cat((batch1, batch2, batch3), 1)
+        print("batch1 size = ",batch1.size())
+        print("batch2 size = ",batch2.size())
+        print("batch3 size = ",batch3.size())
+        # print("batch4 size = ",batch4.size())
+        return torch.cat((batch1, batch2, batch3), dim =1)
+        # return torch.cat((batch1, batch2), dim =1)
 
 
 class ReductionB(nn.Module):
@@ -210,6 +222,7 @@ class ReductionB(nn.Module):
 class InceptionV4(nn.Module):
     def __init__(self, num_classes=10):
         super(InceptionV4, self).__init__()
+
         self.stem = nn.Sequential(
             Stem()
         )
