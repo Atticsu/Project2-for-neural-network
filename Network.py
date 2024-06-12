@@ -223,8 +223,8 @@ class InceptionV4(nn.Module):
         self.inception_a = nn.Sequential(
             InceptionA(384),
             InceptionA(384),
-            # InceptionA(384),
-            # InceptionA(384)
+            InceptionA(384),
+            InceptionA(384)
         )
         
         self.reduction_a = ReductionA(384)
@@ -234,17 +234,17 @@ class InceptionV4(nn.Module):
             InceptionB(1024),
             InceptionB(1024),
             InceptionB(1024),
-            # InceptionB(1024),
-            # InceptionB(1024),
-            # InceptionB(1024)
+            InceptionB(1024),
+            InceptionB(1024),
+            InceptionB(1024)
         )
         
         self.reduction_b = ReductionB(1024)
         
         self.inception_c = nn.Sequential(
             InceptionC(1536),
-            # InceptionC(1536),
-            # InceptionC(1536)
+            InceptionC(1536),
+            InceptionC(1536)
         )
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
@@ -263,7 +263,7 @@ class InceptionV4(nn.Module):
         x = torch.flatten(x, 1)
         x = self.dropout(x)
         x = self.fc(x)
-        return F.softmax(x, dim=1)
+        return x
 
 model = InceptionV4(num_classes=10).to(device)
 
