@@ -1,3 +1,5 @@
+# 此模型训练开销耗时过大，转用基于inception v1改进
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
