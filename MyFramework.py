@@ -9,8 +9,6 @@ import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-#添加Res 层
-
 class InceptionModule(nn.Module):
     def __init__(self, in_channels, ch1x1, ch3x3_reduce, ch3x3, ch5x5_reduce, ch5x5, pool_proj):
         super(InceptionModule, self).__init__()
